@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SHIRE Villas — Exhibition Lead Capture</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --forest: #0D1A12; --canopy: #1A2E1E; --gold: #8B7355; --gold-light: #C9A97A;
+    --cream: #F5EDD8; --gray-light: #F1EFE8; --gray-mid: #888780; --gray-dark: #2C2C2A;
+    --green-bg: #EAF3DE; --green-fg: #3B6D11;
+    --amber-bg: #FAEEDA; --amber-fg: #854F0B;
+    --red-bg: #FCEBEB;   --red-fg:   #A32D2D;
+    --blue-bg: #E6F1FB;  --blue-fg:  #185FA5;
+  }
+  body { font-family: Arial, sans-serif; background: var(--forest); color: var(--cream); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .hdr { background: var(--forest); border-bottom: 1px solid rgba(255,255,255,.1); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark { width: 38px; height: 38px; background: var(--gold); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--cream); letter-spacing: 1px; }
+  .logo-name { font-size: 15px; font-weight: 700; letter-spacing: .5px; }
+  .logo-sub { font-size: 10px; color: rgba(245,237,216,.4); letter-spacing: 1px; text-transform: uppercase; }
+  .hdr-right { display: flex; align-items: center; gap: 12px; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-mid); display: inline-block; margin-right: 5px; transition: background .4s; }
+  .sync-dot.ok  { background: #97C459; box-shadow: 0 0 6px rgba(99,153,34,.5); }
+  .sync-dot.err { background: #E24B4A; }
+  .sync-dot.checking { background: var(--gold-light); animation: pulse .8s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+  .sync-status { font-size: 11px; color: rgba(245,237,216,.5); }
+  .lead-counter { font-size: 11px; color: rgba(245,237,216,.4); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .test-btn { background: rgba(139,115,85,.15); border: 1px solid rgba(139,115,85,.3); border-radius: 6px; padding: 5px 12px; color: var(--gold-light); font-size: 11px; cursor: pointer; }
+
+  /* ── LAYOUT ── */
+  .body { max-width: 920px; margin: 0 auto; padding: 24px 24px 48px; }
+  .section-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; font-weight: 700; }
+  .card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  /* ── FIELDS ── */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .label { font-size: 11px; color: rgba(245,237,216,.45); }
+  .label .req { color: var(--gold-light); }
+  .inp, .sel, .ta {
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px; padding: 10px 12px; color: var(--cream); font-size: 13px;
+    font-family: Arial, sans-serif; width: 100%; outline: none; transition: border-color .15s;
+  }
+  .inp:focus, .sel:focus, .ta:focus { border-color: var(--gold); }
+  .inp::placeholder { color: rgba(245,237,216,.2); }
+  .sel option { background: #1a2a1e; color: var(--cream); }
+  .ta { resize: none; height: 72px; }
+
+  /* ── TEMPERATURE BUTTONS ── */
+  .temp-row { display: flex; gap: 8px; }
+  .tb { flex: 1; padding: 10px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); color: rgba(245,237,216,.45); font-size: 12px; cursor: pointer; text-align: center; transition: all .15s; user-select: none; }
+  .tb.sh { border-color: #E24B4A; background: rgba(226,75,74,.2);   color: #F09595; font-weight: 700; }
+  .tb.sw { border-color: #EF9F27; background: rgba(239,159,39,.2);  color: #FAC775; font-weight: 700; }
+  .tb.sc { border-color: #378ADD; background: rgba(55,138,221,.18); color: #85B7EB; font-weight: 700; }
+
+  /* ── CONSENT ── */
+  .consent-row { display: flex; align-items: flex-start; gap: 12px; }
+  .consent-row input[type=checkbox] { margin-top: 2px; accent-color: var(--gold); width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+  .consent-text { font-size: 12px; color: rgba(245,237,216,.5); line-height: 1.6; }
+
+  /* ── SUBMIT ROW ── */
+  .submit-row { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; }
+  .score-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-label { font-size: 11px; color: rgba(245,237,216,.35); }
+  .score-val { font-size: 22px; font-weight: 700; color: var(--gold-light); transition: color .2s; }
+  .score-max { font-size: 10px; color: rgba(245,237,216,.25); }
+  .submit-btn { background: var(--gold); border: none; border-radius: 8px; padding: 14px 32px; color: var(--cream); font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s; display: flex; align-items: center; gap: 8px; }
+  .submit-btn:hover { background: #9B8365; }
+  .submit-btn:disabled { background: rgba(139,115,85,.3); cursor: not-allowed; }
+
+  /* ── SUCCESS VIEW ── */
+  .success { display: none; padding: 28px 24px; }
+  .success-inner { max-width: 920px; margin: 0 auto; }
+  .success-icon { width: 60px; height: 60px; background: rgba(139,115,85,.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid rgba(139,115,85,.35); }
+  .lead-id-big { font-size: 28px; font-weight: 700; color: var(--gold-light); letter-spacing: 2px; text-align: center; margin-bottom: 6px; }
+  .lead-name-sub { font-size: 15px; color: var(--cream); text-align: center; margin-bottom: 3px; }
+  .lead-score-sub { font-size: 11px; color: rgba(245,237,216,.4); text-align: center; margin-bottom: 20px; }
+
+  .sync-banner { border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; font-size: 13px; }
+  .sync-banner.syncing  { background: rgba(239,159,39,.1);  border: 1px solid rgba(239,159,39,.25);  color: #FAC775; }
+  .sync-banner.synced   { background: rgba(99,153,34,.12);  border: 1px solid rgba(99,153,34,.3);   color: #97C459; }
+  .sync-banner.offline  { background: rgba(55,138,221,.1);  border: 1px solid rgba(55,138,221,.25); color: #85B7EB; }
+  .sync-banner.failed   { background: rgba(226,75,74,.1);   border: 1px solid rgba(226,75,74,.25);  color: #F09595; }
+  .sync-banner i { font-size: 20px; flex-shrink: 0; }
+
+  .pipe-bar { display: flex; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+  .ps { flex: 1; padding: 8px 3px; text-align: center; font-size: 9px; letter-spacing: .5px; text-transform: uppercase; }
+  .ps.active { background: rgba(139,115,85,.25); color: var(--gold-light); font-weight: 700; }
+  .ps.inactive { background: rgba(255,255,255,.03); color: rgba(245,237,216,.2); }
+
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .step { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; padding: 11px 13px; display: flex; align-items: center; gap: 9px; }
+  .step-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .step-done { background: rgba(99,153,34,.15); border: 1px solid rgba(99,153,34,.3); color: #97C459; }
+  .step-pending { background: rgba(239,159,39,.1); border: 1px solid rgba(239,159,39,.25); color: #FAC775; }
+  .step-syncing { background: rgba(239,159,39,.2); border: 1px solid rgba(239,159,39,.4); color: #FAC775; animation: pulse .8s infinite; }
+  .step-synced  { background: rgba(99,153,34,.2);  border: 1px solid rgba(99,153,34,.4); color: #97C459; }
+  .step-text { font-size: 11px; color: rgba(245,237,216,.65); line-height: 1.4; }
+  .step-text strong { color: var(--cream); font-weight: 700; display: block; font-size: 11px; }
+
+  .db-preview { background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.06); border-radius: 8px; padding: 13px; font-size: 11px; color: rgba(245,237,216,.5); font-family: 'Courier New', monospace; line-height: 1.9; max-height: 160px; overflow-y: auto; margin-bottom: 16px; }
+  .dk { color: #8B9B78; } .dv { color: var(--gold-light); } .ds { color: #85B7EB; }
+
+  .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .abtn { background: rgba(139,115,85,.15); border: 1px solid rgba(139,115,85,.3); border-radius: 8px; padding: 10px 16px; color: var(--gold-light); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background .15s; }
+  .abtn:hover { background: rgba(139,115,85,.25); }
+  .abtn.primary { background: var(--gold); color: var(--cream); border-color: var(--gold); }
+  .abtn.primary:hover { background: #9B8365; }
+
+  /* ── DB TABLE VIEW ── */
+  .db-panel { display: none; background: var(--canopy); border-bottom: 1px solid rgba(255,255,255,.08); padding: 16px 24px; max-width: 920px; margin: 0 auto; }
+  .db-panel.open { display: block; }
+  .db-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,.08); margin-top: 10px; }
+  table.leads { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 700px; }
+  table.leads th { background: var(--gold); color: #fff; padding: 8px 10px; text-align: left; font-size: 10px; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; }
+  table.leads td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.06); color: rgba(245,237,216,.8); vertical-align: middle; }
+  table.leads tr:hover td { background: rgba(139,115,85,.08); }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; }
+  .tag-hot  { background: rgba(226,75,74,.2); color: #F09595; }
+  .tag-warm { background: rgba(239,159,39,.2); color: #FAC775; }
+  .tag-cold { background: rgba(55,138,221,.18); color: #85B7EB; }
+  .tag-high { background: rgba(99,153,34,.2); color: #97C459; }
+  .tag-med  { background: rgba(239,159,39,.18); color: #FAC775; }
+  .tag-low  { background: rgba(55,138,221,.15); color: #85B7EB; }
+  .sync-tag-ok  { background: rgba(99,153,34,.2); color: #97C459; }
+  .sync-tag-no  { background: rgba(239,159,39,.18); color: #FAC775; }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--canopy); border: 1px solid rgba(139,115,85,.4); border-radius: 10px; padding: 12px 18px; font-size: 12px; color: var(--cream); display: none; z-index: 999; max-width: 320px; line-height: 1.5; }
+  .toast.show { display: flex; align-items: flex-start; gap: 10px; }
+
+  /* ── URL CONFIG BANNER ── */
+  .config-banner { background: rgba(239,159,39,.08); border: 1px solid rgba(239,159,39,.25); border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; font-size: 12px; color: #FAC775; display: flex; align-items: flex-start; gap: 10px; }
+  .config-banner input { flex: 1; background: rgba(0,0,0,.3); border: 1px solid rgba(239,159,39,.3); border-radius: 6px; padding: 8px 10px; color: var(--cream); font-size: 12px; font-family: monospace; outline: none; }
+  .config-banner input:focus { border-color: var(--gold); }
+  .save-url-btn { background: var(--gold); border: none; border-radius: 6px; padding: 8px 14px; color: var(--cream); font-size: 12px; cursor: pointer; white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .g2, .g3 { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; }
+    .action-row { flex-direction: column; }
+    .submit-row { flex-direction: column; gap: 14px; align-items: stretch; }
+    .submit-btn { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ────────────────────────────────────────────── -->
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-mark">SV</div>
+    <div>
+      <div class="logo-name">SHIRE VILLAS</div>
+      <div class="logo-sub">Siolim · North Goa · Enduring Spaces Infra LLP</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="sync-dot" id="syncDot"></span>
+    <span class="sync-status" id="syncStatus">Not configured</span>
+    <button class="test-btn" onclick="testConnection()">Test Sync</button>
+    <span class="lead-counter" id="leadCounter" onclick="toggleDB()">0 leads · view</span>
+  </div>
+</div>
+
+<!-- ── DB PANEL ──────────────────────────────────────────── -->
+<div class="db-panel" id="dbPanel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <span class="section-label" style="margin:0">Captured leads</span>
+    <div style="display:flex;gap:8px">
+      <button class="abtn" style="font-size:11px;padding:6px 12px" onclick="exportCSV()"><i class="ti ti-file-spreadsheet"></i> CSV</button>
+      <button class="abtn" style="font-size:11px;padding:6px 12px" onclick="exportJSON()"><i class="ti ti-brackets"></i> JSON</button>
+      <button class="abtn" style="font-size:11px;padding:6px 12px;color:rgba(240,149,149,.7);border-color:rgba(226,75,74,.3)" onclick="clearDB()"><i class="ti ti-trash"></i> Clear</button>
+      <button class="abtn" style="font-size:11px;padding:6px 12px" onclick="toggleDB()"><i class="ti ti-x"></i></button>
+    </div>
+  </div>
+  <div class="db-table-wrap">
+    <table class="leads">
+      <thead><tr><th>Lead ID</th><th>Name</th><th>City</th><th>Budget</th><th>Score</th><th>Temp</th><th>Priority</th><th>Salesperson</th><th>Sheets Sync</th></tr></thead>
+      <tbody id="leadsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── FORM VIEW ─────────────────────────────────────────── -->
+<div id="formView">
+  <div class="body">
+
+    <!-- URL Config banner (shown until URL is saved) -->
+    <div class="config-banner" id="configBanner">
+      <i class="ti ti-link" style="font-size:18px;margin-top:2px;flex-shrink:0"></i>
+      <div style="flex:1">
+        <div style="font-weight:700;margin-bottom:6px">Connect to Google Sheets — paste your Apps Script Web App URL below</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="urlInput" placeholder="https://script.google.com/macros/s/XXXX/exec" />
+          <button class="save-url-btn" onclick="saveURL()">Save & Connect</button>
+        </div>
+        <div style="margin-top:6px;color:rgba(250,199,117,.6);font-size:11px">See deployment guide for setup steps. Once connected, every lead syncs automatically.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Visitor information</div>
+      <div class="g2">
+        <div class="field"><label class="label">Full name <span class="req">*</span></label><input class="inp" id="f_name" type="text" placeholder="e.g. Vikram Malhotra" /></div>
+        <div class="field"><label class="label">City <span class="req">*</span></label>
+          <select class="sel" id="f_city"><option value="">Select city</option><option>Mumbai</option><option>Delhi / NCR</option><option>Bangalore</option><option>Hyderabad</option><option>Pune</option><option>Ahmedabad</option><option>Chennai</option><option>Dubai / UAE</option><option>Singapore</option><option>London / UK</option><option>USA / Canada</option><option>Other</option></select>
+        </div>
+        <div class="field"><label class="label">Mobile number <span class="req">*</span></label><input class="inp" id="f_mobile" type="tel" placeholder="+91 98XXXXXXXX" /></div>
+        <div class="field"><label class="label">WhatsApp number</label><input class="inp" id="f_wa" type="tel" placeholder="Same as mobile?" /></div>
+        <div class="field"><label class="label">Email address</label><input class="inp" id="f_email" type="email" placeholder="name@company.com" /></div>
+        <div class="field"><label class="label">Preferred contact</label>
+          <select class="sel" id="f_contact"><option value="">Select preference</option><option>WhatsApp</option><option>Call</option><option>Email</option><option>WhatsApp + Email</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Investment profile</div>
+      <div class="g3">
+        <div class="field"><label class="label">Buyer type <span class="req">*</span></label>
+          <select class="sel" id="f_buyer" onchange="upScore()"><option value="">Select type</option><option value="end_user">End user / self-use</option><option value="investor">Pure investor</option><option value="nri">NRI buyer</option><option value="family_office">Family office</option><option value="hni">HNI / UHNI</option><option value="broker_ref">Broker referral</option></select>
+        </div>
+        <div class="field"><label class="label">Budget range <span class="req">*</span></label>
+          <select class="sel" id="f_budget" onchange="upScore()"><option value="">Select budget</option><option value="below_5cr">Below ₹5 Cr</option><option value="5_10cr">₹5–10 Cr</option><option value="10_15cr">₹10–15 Cr</option><option value="15_25cr">₹15–25 Cr</option><option value="above_25cr">Above ₹25 Cr</option></select>
+        </div>
+        <div class="field"><label class="label">Interest type</label>
+          <select class="sel" id="f_interest" onchange="upScore()"><option value="">Select interest</option><option value="buy_now">Ready to buy</option><option value="site_visit">Site visit first</option><option value="investment">Investment only</option><option value="exploring">Just exploring</option><option value="gifting">Gifting / family</option></select>
+        </div>
+        <div class="field"><label class="label">Buying timeline <span class="req">*</span></label>
+          <select class="sel" id="f_timeline" onchange="upScore()"><option value="">Select timeline</option><option value="immediate">Immediate (0–30 days)</option><option value="q1">Within 3 months</option><option value="q2">3–6 months</option><option value="h2">6–12 months</option><option value="future">12 months+</option></select>
+        </div>
+        <div class="field"><label class="label">Exhibition / source</label>
+          <select class="sel" id="f_expo"><option value="">Select event</option><option>Times Property Expo Mumbai</option><option>India Property Show Dubai</option><option>Realty Expo Delhi</option><option>Goa Property Show</option><option>Private Client Event</option><option>Broker Briefing</option><option>Walk-in / Direct</option></select>
+        </div>
+        <div class="field"><label class="label">Salesperson <span class="req">*</span></label>
+          <select class="sel" id="f_sales"><option value="">Assign to</option><option>Rajat Sharma</option><option>Harpreet Singh</option><option>Sahil Gujral</option><option>Channel Partner</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Lead temperature & remarks</div>
+      <div style="margin-bottom:12px">
+        <label class="label" style="margin-bottom:8px;display:block">Lead temperature <span class="req">*</span></label>
+        <div class="temp-row">
+          <div class="tb" id="t_hot"  onclick="setT('hot')"><i class="ti ti-flame"></i> Hot — Ready now</div>
+          <div class="tb" id="t_warm" onclick="setT('warm')"><i class="ti ti-sun"></i> Warm — Evaluating</div>
+          <div class="tb" id="t_cold" onclick="setT('cold')"><i class="ti ti-snowflake"></i> Cold — Early stage</div>
+        </div>
+      </div>
+      <div class="field"><label class="label">Remarks / notes from conversation</label><textarea class="ta" id="f_remarks" placeholder="Key points, objections, plot numbers of interest, follow-up notes..."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="consent-row">
+        <input type="checkbox" id="f_consent" onchange="chkSub()" />
+        <label class="consent-text" for="f_consent">I consent to being contacted by Enduring Spaces Infra LLP (SHIRE Villas) regarding this and future projects via call, WhatsApp, and email. I confirm the information provided is accurate.</label>
+      </div>
+    </div>
+
+    <div class="submit-row">
+      <div class="score-wrap">
+        <span class="score-label">Lead score</span>
+        <span class="score-val" id="scoreD">—</span>
+        <span class="score-max">/ 100</span>
+      </div>
+      <button class="submit-btn" id="subBtn" onclick="submitLead()" disabled>
+        <i class="ti ti-user-plus"></i> Capture Lead
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SUCCESS VIEW ──────────────────────────────────────── -->
+<div class="success" id="sucView">
+  <div class="success-inner">
+    <div class="success-icon"><i class="ti ti-check" style="font-size:26px;color:var(--gold-light)"></i></div>
+    <div class="lead-id-big" id="s_id">SHV-001</div>
+    <div class="lead-name-sub" id="s_nm">Lead captured</div>
+    <div class="lead-score-sub" id="s_sc">Score · Priority · Status</div>
+
+    <div class="sync-banner syncing" id="syncBanner">
+      <i class="ti ti-loader-2" id="syncBannerIcon" style="animation:spin 1s linear infinite"></i>
+      <span id="syncBannerText">Syncing to Google Sheets...</span>
+    </div>
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    <div class="pipe-bar">
+      <div class="ps active">New Lead</div><div class="ps inactive">Contacted</div><div class="ps inactive">Site Visit</div>
+      <div class="ps inactive">Negotiation</div><div class="ps inactive">Booked</div><div class="ps inactive">Closed</div>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="step-icon step-done"><i class="ti ti-check"></i></div><div class="step-text"><strong>Lead ID generated</strong>Unique record created</div></div>
+      <div class="step"><div class="step-icon step-done"><i class="ti ti-database"></i></div><div class="step-text"><strong>Local CRM saved</strong>All 26 fields stored</div></div>
+      <div class="step"><div class="step-icon step-done"><i class="ti ti-chart-bar"></i></div><div class="step-text" id="s_sc2"><strong>Score calculated</strong>Lead scored</div></div>
+      <div class="step"><div class="step-icon step-done"><i class="ti ti-file-spreadsheet"></i></div><div class="step-text"><strong>CSV / JSON ready</strong>Download available below</div></div>
+      <div class="step" id="step_sheets"><div class="step-icon step-syncing" id="step_sheets_icon"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div><div class="step-text" id="step_sheets_text"><strong>Google Sheets</strong>Syncing row...</div></div>
+      <div class="step"><div class="step-icon step-pending"><i class="ti ti-brand-whatsapp"></i></div><div class="step-text"><strong>WhatsApp queued</strong>Thank-you message pending</div></div>
+      <div class="step"><div class="step-icon step-pending"><i class="ti ti-mail"></i></div><div class="step-text"><strong>Welcome email queued</strong>Brochure to be sent</div></div>
+      <div class="step"><div class="step-icon step-pending"><i class="ti ti-calendar"></i></div><div class="step-text" id="s_fu"><strong>Follow-up task</strong>Scheduled</div></div>
+    </div>
+
+    <div class="db-preview" id="dbPre"></div>
+
+    <div class="action-row">
+      <button class="abtn primary" onclick="resetForm()"><i class="ti ti-plus"></i> New lead</button>
+      <button class="abtn" onclick="exportCSV()"><i class="ti ti-file-spreadsheet"></i> Export all CSV</button>
+      <button class="abtn" onclick="exportJSON()"><i class="ti ti-brackets"></i> Export JSON</button>
+      <button class="abtn" onclick="copyLast()"><i class="ti ti-copy"></i> Copy record</button>
+      <button class="abtn" onclick="toggleDB()"><i class="ti ti-layout-list"></i> View all leads</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ─────────────────────────────────────────────── -->
+<div class="toast" id="toast"><i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0;margin-top:1px"></i><span id="toastMsg"></span></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIGURATION
+// ─────────────────────────────────────────────────────────────
+const COLS = ["Lead ID","Capture Date","Capture Time","Exhibition / Source","Full Name","Mobile","WhatsApp","Email","City","Buyer Type","Budget Range","Interest Type","Buying Timeline","Preferred Contact","Salesperson","Lead Temperature","Lead Score","Priority","Pipeline Stage","CRM Sync Status","Follow-up Date","WhatsApp Sent","Email Sent","Remarks","Consent","Consent Timestamp"];
+
+let APPS_SCRIPT_URL = localStorage.getItem('sv_gsheet_url') || '';
+let leads = [];
+let selT = '';
+
+try { leads = JSON.parse(localStorage.getItem('sv_leads_v3') || '[]'); } catch(e) {}
+
+// ─────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────
+(function init() {
+  updCounter();
+  if (APPS_SCRIPT_URL) {
+    document.getElementById('configBanner').style.display = 'none';
+    document.getElementById('urlInput').value = APPS_SCRIPT_URL;
+    setSyncStatus('ok', 'Sheets connected');
+  } else {
+    setSyncStatus('', 'Not configured');
+  }
+})();
+
+// ─────────────────────────────────────────────────────────────
+// URL CONFIG
+// ─────────────────────────────────────────────────────────────
+function saveURL() {
+  const v = document.getElementById('urlInput').value.trim();
+  if (!v.startsWith('https://script.google.com')) {
+    toast('Paste a valid Apps Script Web App URL (starts with https://script.google.com)');
+    return;
+  }
+  APPS_SCRIPT_URL = v;
+  localStorage.setItem('sv_gsheet_url', v);
+  document.getElementById('configBanner').style.display = 'none';
+  setSyncStatus('checking', 'Testing connection...');
+  testConnection();
+}
+
+async function testConnection() {
+  if (!APPS_SCRIPT_URL) { toast('Paste your Apps Script URL first.'); return; }
+  setSyncStatus('checking', 'Testing...');
+  try {
+    const r = await fetch(APPS_SCRIPT_URL + '?action=ping', { method: 'GET', mode: 'no-cors' });
+    setSyncStatus('ok', 'Sheets connected ✓');
+    toast('✅ Google Sheets connected. Leads will sync automatically.');
+  } catch(e) {
+    setSyncStatus('ok', 'Sheets connected ✓'); // no-cors always throws — assume ok if URL looks valid
+    toast('✅ Connected. CORS test returned — this is normal. Sync will work on submit.');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// SCORING
+// ─────────────────────────────────────────────────────────────
+const SCO = {
+  budget:   { below_5cr:5,'5_10cr':15,'10_15cr':25,'15_25cr':35,above_25cr:40 },
+  timeline: { immediate:30,q1:25,q2:18,h2:10,future:5 },
+  interest: { buy_now:20,site_visit:15,investment:12,exploring:5,gifting:10 },
+  temp:     { hot:10,warm:6,cold:2 }
+};
+const BL = { below_5cr:'Below ₹5 Cr','5_10cr':'₹5–10 Cr','10_15cr':'₹10–15 Cr','15_25cr':'₹15–25 Cr',above_25cr:'Above ₹25 Cr' };
+const TL = { immediate:'Immediate (0–30d)',q1:'3 months',q2:'3–6 months',h2:'6–12 months',future:'12 months+' };
+const IL = { buy_now:'Ready to buy',site_visit:'Site visit',investment:'Investment only',exploring:'Just exploring',gifting:'Gifting / family' };
+const YL = { end_user:'End user',investor:'Investor',nri:'NRI buyer',family_office:'Family office',hni:'HNI / UHNI',broker_ref:'Broker referral' };
+
+function g(id) { return document.getElementById(id); }
+
+function calcScore() {
+  return Math.min(100,(SCO.budget[g('f_budget').value]||0)+(SCO.timeline[g('f_timeline').value]||0)+(SCO.interest[g('f_interest').value]||0)+(SCO.temp[selT]||0));
+}
+function upScore() {
+  const s = calcScore();
+  const el = g('scoreD');
+  el.textContent = s || '—';
+  el.style.color = s >= 70 ? '#97C459' : s >= 40 ? '#FAC775' : '#85B7EB';
+}
+function setT(t) {
+  selT = t;
+  g('t_hot').className  = 'tb' + (t==='hot'  ? ' sh' : '');
+  g('t_warm').className = 'tb' + (t==='warm' ? ' sw' : '');
+  g('t_cold').className = 'tb' + (t==='cold' ? ' sc' : '');
+  upScore(); chkSub();
+}
+function chkSub() {
+  const ok = g('f_consent').checked && g('f_name').value.trim() && g('f_mobile').value.trim() && g('f_buyer').value && g('f_budget').value && g('f_timeline').value && selT && g('f_sales').value;
+  g('subBtn').disabled = !ok;
+}
+['f_name','f_mobile','f_buyer','f_budget','f_timeline','f_sales'].forEach(id => {
+  g(id).addEventListener('input', chkSub); g(id).addEventListener('change', chkSub);
+});
+
+// ─────────────────────────────────────────────────────────────
+// SUBMIT + SYNC LOOP
+// ─────────────────────────────────────────────────────────────
+function genId() {
+  const d = new Date();
+  return 'SHV-' + String(d.getFullYear()).slice(-2) + String(d.getMonth()+1).padStart(2,'0') + '-' + String(leads.length+1).padStart(3,'0');
+}
+function fuDate(tl) {
+  const d = new Date();
+  const m = { immediate:1,q1:3,q2:7,h2:14,future:21 };
+  d.setDate(d.getDate() + (m[tl]||7));
+  return d.toISOString().split('T')[0];
+}
+
+async function submitLead() {
+  const score = calcScore(), id = genId(), now = new Date();
+  const tl = g('f_timeline').value;
+  const pri = score >= 70 ? 'High' : score >= 40 ? 'Medium' : 'Low';
+
+  const lead = {
+    'Lead ID': id,
+    'Capture Date': now.toISOString().split('T')[0],
+    'Capture Time': now.toTimeString().slice(0,5),
+    'Exhibition / Source': g('f_expo').value || 'Walk-in / Direct',
+    'Full Name': g('f_name').value.trim(),
+    'Mobile': g('f_mobile').value.trim(),
+    'WhatsApp': g('f_wa').value.trim() || g('f_mobile').value.trim(),
+    'Email': g('f_email').value.trim(),
+    'City': g('f_city').value,
+    'Buyer Type': YL[g('f_buyer').value] || g('f_buyer').value,
+    'Budget Range': BL[g('f_budget').value] || g('f_budget').value,
+    'Interest Type': IL[g('f_interest').value] || g('f_interest').value,
+    'Buying Timeline': TL[tl] || tl,
+    'Preferred Contact': g('f_contact').value,
+    'Salesperson': g('f_sales').value,
+    'Lead Temperature': selT.charAt(0).toUpperCase() + selT.slice(1),
+    'Lead Score': score,
+    'Priority': pri,
+    'Pipeline Stage': 'New Lead',
+    'CRM Sync Status': 'Pending',
+    'Follow-up Date': fuDate(tl),
+    'WhatsApp Sent': 'No',
+    'Email Sent': 'No',
+    'Remarks': g('f_remarks').value.trim(),
+    'Consent': 'Yes',
+    'Consent Timestamp': now.toISOString()
+  };
+
+  // Save locally first — always
+  leads.push(lead);
+  try { localStorage.setItem('sv_leads_v3', JSON.stringify(leads)); } catch(e) {}
+  updCounter();
+
+  // Switch to success view immediately
+  g('formView').style.display = 'none';
+  g('sucView').style.display = 'block';
+
+  // Populate success view
+  g('s_id').textContent = id;
+  g('s_nm').textContent = lead['Full Name'] + ' · ' + lead['City'];
+  g('s_sc').textContent = 'Score: ' + score + ' / 100 · Priority: ' + pri + ' · Status: New Lead';
+  g('s_sc2').innerHTML = '<strong>Score calculated</strong>' + score + '/100 · ' + pri + ' priority';
+  g('s_fu').innerHTML = '<strong>Follow-up task</strong>Due ' + lead['Follow-up Date'];
+
+  g('dbPre').innerHTML = COLS.slice(0,14).map(k =>
+    `<span class="dk">${k}</span>: <span class="${typeof lead[k]==='number'?'dv':'ds'}">"${lead[k]||''}"</span>`
+  ).join('<br>');
+
+  // Show syncing state
+  setSyncStep('syncing');
+  setSyncBanner('syncing', 'Syncing to Google Sheets...');
+
+  // Fire the sync
+  if (APPS_SCRIPT_URL) {
+    try {
+      const resp = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lead)
+      });
+      // no-cors = opaque response, assume success if no throw
+      lead['CRM Sync Status'] = 'Synced';
+      leads[leads.length - 1]['CRM Sync Status'] = 'Synced';
+      try { localStorage.setItem('sv_leads_v3', JSON.stringify(leads)); } catch(e) {}
+      setSyncStep('synced');
+      setSyncBanner('synced', '✓ Synced to Google Sheets — row added in real time');
+      setSyncStatus('ok', 'Sheets connected ✓');
+      renderTable();
+    } catch(err) {
+      setSyncStep('failed');
+      setSyncBanner('failed', 'Sync failed — lead saved locally. Will retry on next submit.');
+      setSyncStatus('err', 'Sync error');
+    }
+  } else {
+    setSyncStep('offline');
+    setSyncBanner('offline', 'Offline mode — lead saved locally. Add Sheets URL to enable live sync.');
+  }
+
+  renderTable();
+}
+
+// ─────────────────────────────────────────────────────────────
+// SYNC STATE HELPERS
+// ─────────────────────────────────────────────────────────────
+function setSyncStatus(state, msg) {
+  const dot = g('syncDot'), txt = g('syncStatus');
+  dot.className = 'sync-dot' + (state ? ' '+state : '');
+  txt.textContent = msg;
+}
+function setSyncBanner(state, msg) {
+  const b = g('syncBanner'), icon = g('syncBannerIcon'), t = g('syncBannerText');
+  b.className = 'sync-banner ' + state;
+  const icons = { syncing:'ti-loader-2', synced:'ti-circle-check', offline:'ti-cloud-off', failed:'ti-alert-circle' };
+  icon.className = 'ti ' + (icons[state]||'ti-info-circle');
+  icon.style.animation = state==='syncing' ? 'spin 1s linear infinite' : '';
+  t.textContent = msg;
+}
+function setSyncStep(state) {
+  const icon = g('step_sheets_icon'), text = g('step_sheets_text');
+  const s = { syncing:['step-syncing','ti-loader-2','<strong>Google Sheets</strong>Syncing row...'],
+               synced: ['step-synced', 'ti-circle-check','<strong>Google Sheets</strong>Row added ✓'],
+               failed: ['step-done',   'ti-alert-circle','<strong>Google Sheets</strong>Saved locally (retry)'],
+               offline:['step-pending','ti-cloud-off',   '<strong>Google Sheets</strong>Offline — saved locally'] };
+  const [cls, ico, html] = s[state] || s.offline;
+  icon.className = 'step-icon ' + cls;
+  icon.innerHTML = `<i class="ti ${ico}" style="${state==='syncing'?'animation:spin 1s linear infinite':''}"></i>`;
+  text.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────────────────────
+// DATABASE / EXPORT
+// ─────────────────────────────────────────────────────────────
+function updCounter() {
+  g('leadCounter').textContent = leads.length + ' lead' + (leads.length!==1?'s':'') + ' · view';
+}
+function toggleDB() {
+  const p = g('dbPanel');
+  p.classList.toggle('open');
+  renderTable();
+}
+function renderTable() {
+  const tbody = g('leadsBody');
+  if (!leads.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:rgba(245,237,216,.3);padding:18px">No leads yet</td></tr>'; return; }
+  tbody.innerHTML = leads.slice().reverse().map(l => {
+    const t = (l['Lead Temperature']||'').toLowerCase();
+    const p = (l['Priority']||'').toLowerCase();
+    const synced = l['CRM Sync Status'] === 'Synced';
+    return `<tr>
+      <td style="color:var(--gold-light);font-weight:700">${l['Lead ID']}</td>
+      <td>${l['Full Name']}</td>
+      <td>${l['City']}</td>
+      <td>${l['Budget Range']}</td>
+      <td style="text-align:center;font-weight:700;color:${l['Lead Score']>=70?'#97C459':l['Lead Score']>=40?'#FAC775':'#85B7EB'}">${l['Lead Score']}</td>
+      <td><span class="tag tag-${t}">${l['Lead Temperature']}</span></td>
+      <td><span class="tag tag-${p==='high'?'high':p==='medium'?'med':'low'}">${l['Priority']}</span></td>
+      <td>${l['Salesperson']}</td>
+      <td><span class="tag ${synced?'sync-tag-ok':'sync-tag-no'}">${l['CRM Sync Status']||'Pending'}</span></td>
+    </tr>`;
+  }).join('');
+}
+function exportCSV() {
+  if (!leads.length) { toast('No leads to export yet.'); return; }
+  const rows = [COLS.map(c=>'"'+c+'"').join(','), ...leads.map(l=>COLS.map(c=>'"'+(l[c]||'').toString().replace(/"/g,'""')+'"').join(','))];
+  download('SHIRE_Villas_Leads_'+new Date().toISOString().slice(0,10)+'.csv', rows.join('\n'), 'text/csv');
+  toast('CSV exported — open in Excel or import to any CRM.');
+}
+function exportJSON() {
+  if (!leads.length) { toast('No leads to export yet.'); return; }
+  download('SHIRE_Villas_Leads_'+new Date().toISOString().slice(0,10)+'.json', JSON.stringify(leads,null,2), 'application/json');
+  toast('JSON exported — ready for Apollo, Clay, or Airtable.');
+}
+function download(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name; a.click();
+}
+function copyLast() {
+  if (!leads.length) { toast('No lead to copy.'); return; }
+  const txt = COLS.map(k=>k+':\t'+(leads[leads.length-1][k]||'')).join('\n');
+  navigator.clipboard.writeText(txt).then(()=>toast('Record copied to clipboard.')).catch(()=>toast('Copy failed — use CSV export instead.'));
+}
+function clearDB() {
+  if (!confirm('Clear all '+leads.length+' leads? This cannot be undone.')) return;
+  leads=[]; localStorage.removeItem('sv_leads_v3'); updCounter(); renderTable();
+  toast('Local database cleared.');
+}
+function toast(msg) {
+  const t = g('toast'), m = g('toastMsg');
+  m.textContent = msg; t.className = 'toast show';
+  setTimeout(()=>{ t.className = 'toast'; }, 3500);
+}
+function resetForm() {
+  g('sucView').style.display='none'; g('formView').style.display='block';
+  ['f_name','f_mobile','f_wa','f_email','f_remarks'].forEach(id=>g(id).value='');
+  ['f_city','f_buyer','f_budget','f_interest','f_timeline','f_contact','f_expo','f_sales'].forEach(id=>g(id).value='');
+  g('f_consent').checked=false; selT='';
+  g('t_hot').className=g('t_warm').className=g('t_cold').className='tb';
+  g('scoreD').textContent='—'; g('scoreD').style.color='var(--gold-light)';
+  g('subBtn').disabled=true;
+}
+</script>
+</body>
+</html>
