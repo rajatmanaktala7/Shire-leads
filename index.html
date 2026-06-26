@@ -450,7 +450,7 @@ const TL={immediate:'Immediate (0–30d)',q1:'3 months',q2:'3–6 months',h2:'6�
 const IL={buy_now:'Ready to buy',site_visit:'Site visit',investment:'Investment only',exploring:'Just exploring',gifting:'Gifting / family'};
 const YL={end_user:'End user',investor:'Investor',nri:'NRI buyer',family_office:'Family office',hni:'HNI / UHNI',broker_ref:'Broker referral'};
 
-let SHEETS_URL  = localStorage.getItem('sv_url') || '';
+let SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzjlRzyk67Qf9Q0PQdQENAq82kV9fSQdj9H4Hxy7czbn5MP01lBkXtmgVJtdHw1SnAPHw/exec'; // hardcoded
 let leads       = [];
 let selT        = '';
 let currentUser = null;
@@ -485,7 +485,7 @@ function jsonpFetch(url, timeoutMs) {
       resolve(data);
     };
 
-    var sep = url.indexOf('?') === -1 ? '?' : '&';
+    var sep = url.indexOf('?') !== -1 ? '&' : '?';
     script.src = url + sep + 'callback=' + cbName;
     script.onerror = function() { cleanup(); reject(new Error('JSONP script error')); };
     document.head.appendChild(script);
@@ -496,9 +496,8 @@ function jsonpFetch(url, timeoutMs) {
 // INIT — show URL setup if not configured
 // ═══════════════════════════════════════════════
 (function(){
-  if (!SHEETS_URL) {
-    g('urlSetup').style.display = 'block';
-  }
+  // URL is hardcoded — no setup needed
+  g('urlSetup').style.display = 'none';
 })();
 
 function saveURLFromLogin() {
@@ -556,47 +555,69 @@ async function enterApp() {
 // LOAD LEADS — JSONP from Sheets (no CORS issue)
 // ═══════════════════════════════════════════════
 async function loadLeads() {
-  // Show loading screen
   var ls=g('loadingScreen');
   ls.classList.add('show');
   g('loadingTxt').textContent='Loading leads...';
-  g('loadingSub').textContent='Fetching from Google Sheets database...';
+  g('loadingSub').textContent='Connecting to Google Sheets...';
+  setSyncStat('checking','Connecting...');
 
-  if (!SHEETS_URL) {
-    // No URL — use local cache
-    try{ leads=JSON.parse(localStorage.getItem('sv_cache')||'[]'); }catch(e){ leads=[]; }
-    g('loadingSub').textContent='No Sheets URL. Ask admin to configure.';
-    setSyncStat('','Not configured');
-    setTimeout(function(){ls.classList.remove('show');updCounter();renderTable();}, 1000);
-    return;
-  }
+  // Try JSONP first (works cross-origin without CORS)
+  var loaded = false;
 
   try {
-    setSyncStat('checking','Connecting...');
-    var data = await jsonpFetch(SHEETS_URL+'?action=getLeads');
-    if (data.status==='ok' && Array.isArray(data.leads)) {
+    var data = await jsonpFetch(SHEETS_URL+'?action=getLeads', 15000);
+    if (data && data.status==='ok' && Array.isArray(data.leads)) {
       leads = data.leads;
-      // Save local cache
       try{ localStorage.setItem('sv_cache', JSON.stringify(leads)); }catch(e){}
       g('loadingTxt').textContent = leads.length+' leads loaded ✓';
-      g('loadingSub').textContent = 'All devices are seeing the same data';
+      g('loadingSub').textContent = 'All devices see the same live data';
       setSyncStat('ok','Sheets connected ✓ — '+leads.length+' leads');
-    } else {
-      throw new Error('Unexpected response');
+      loaded = true;
     }
-  } catch(err) {
-    // Fall back to local cache
+  } catch(e1) {
+    console.log('JSONP attempt failed:', e1.message);
+  }
+
+  // If JSONP failed, try regular fetch with no-cors (won't get body but confirms connectivity)
+  if (!loaded) {
+    try {
+      // Try fetch with cors mode — Apps Script sometimes allows it
+      var resp = await Promise.race([
+        fetch(SHEETS_URL+'?action=getLeads', {method:'GET', mode:'cors'}),
+        new Promise(function(_,r){setTimeout(function(){r(new Error('timeout'))},8000)})
+      ]);
+      var data2 = await resp.json();
+      if (data2 && data2.status==='ok' && Array.isArray(data2.leads)) {
+        leads = data2.leads;
+        try{ localStorage.setItem('sv_cache', JSON.stringify(leads)); }catch(e){}
+        g('loadingTxt').textContent = leads.length+' leads loaded ✓';
+        g('loadingSub').textContent = 'Connected via direct fetch';
+        setSyncStat('ok','Sheets connected ✓ — '+leads.length+' leads');
+        loaded = true;
+      }
+    } catch(e2) {
+      console.log('Direct fetch failed:', e2.message);
+    }
+  }
+
+  // Final fallback — use local cache
+  if (!loaded) {
     try{ leads=JSON.parse(localStorage.getItem('sv_cache')||'[]'); }catch(e){ leads=[]; }
-    g('loadingTxt').textContent = 'Using local cache';
-    g('loadingSub').textContent = 'Could not reach Sheets. Check URL. Showing '+leads.length+' cached leads.';
-    setSyncStat('err','Offline — '+leads.length+' cached leads');
-    toast('⚠️ Could not load from Sheets. Showing local backup.');
+    if (leads.length > 0) {
+      g('loadingTxt').textContent = leads.length+' leads from cache';
+      g('loadingSub').textContent = 'Using saved data — tap Refresh to try Sheets again';
+      setSyncStat('err','Using cache — '+leads.length+' leads');
+    } else {
+      g('loadingTxt').textContent = 'Ready to capture';
+      g('loadingSub').textContent = 'Sheets sync pending — leads will save when connected';
+      setSyncStat('err','Sheets offline — leads save locally');
+    }
   }
 
   setTimeout(function(){
     ls.classList.remove('show');
     updCounter(); renderTable();
-  }, 1200);
+  }, 1000);
 }
 
 async function refreshLeads() {
